@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items>
+	<item>
+		<long1>10001</long1>
+		<long2>20001</long2>
+		<string1>555-123456</string1>
+		<string2>OPEN</string2>
+		<timestamp1>2018-02-02 02:02:02.000+0000</timestamp1>
+		<int1>2</int1>
+		<double1>9.99</double1>
+		<subitems>
+			<subitem>
+				<int1>1</int1>
+				<long1>30001</long1>
+				<double1>1.1</double1>
+				<string1>si1</string1>
+			</subitem>
+			<subitem>
+				<int1>2</int1>
+				<long1>30002</long1>
+				<double1>1.2</double1>
+				<string1>si2</string1>
+			</subitem>
+			<subitem>
+				<int1>3</int1>
+				<long1>30003</long1>
+				<double1>2.3</double1>
+				<string1>si2</string1>
+			</subitem>
+		</subitems>
+	</item>
+	<item>
+		<long1>10002</long1>
+		<long2>20002</long2>
+		<string1>555-789123</string1>
+		<string2>OPEN</string2>
+		<timestamp1>2018-01-01 01:01:01.000+0100</timestamp1>
+		<int1>3</int1>
+		<double1>3.99</double1>
+		<subitems>
+			<subitem>
+				<int1>4</int1>
+				<long1>30004</long1>
+				<double1>1.4</double1>
+				<string1>si4</string1>
+			</subitem>
+			<subitem>
+				<int1>5</int1>
+				<long1>30005</long1>
+				<double1>1.5</double1>
+				<string1>si5</string1>
+			</subitem>
+		</subitems>
+	</item>
+</items>

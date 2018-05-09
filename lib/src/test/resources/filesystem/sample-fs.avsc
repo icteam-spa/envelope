@@ -1,0 +1,23 @@
+{ "type" : "record", "name" : "item", "fields" : [
+  { "name" : "long1", "type" : "long" },
+  { "name" : "long2", "type" : "long" },
+  { "name" : "string1", "type" : "string" },
+  { "name" : "string2", "type" : "string" },
+  { "name" : "timestamp1", "type" : "string" },
+  { "name" : "int1", "type" : "int" },
+  { "name" : "double1", "type" : "double" },
+  { "name" : "subitems",  "type" : 
+    { "type" : "record", "name" : "subitems_r","fields" : [
+      { "name" : "subitem", "type" : 
+        { "type" : "array", "name" : "subitem_a", "items" : 
+          {"type":"record", "name" : "subitem_r", "fields" : [
+            { "name" : "int1", "type" : "int" },
+            { "name" : "long1", "type" : "long" },
+            { "name" : "double1", "type" : "double" },
+            { "name" : "string1", "type" : "string" }
+          ]}
+        }
+      }
+    ]}
+  }
+]}

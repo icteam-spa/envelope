@@ -19,8 +19,10 @@ package com.cloudera.labs.envelope.input;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.io.LongWritable;
@@ -28,10 +30,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.spark.SparkException;
+import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructType;
 import org.junit.Test;
 
 import com.cloudera.labs.envelope.input.translate.DummyInputFormatTranslator;
@@ -49,6 +53,8 @@ public class TestFileSystemInput {
   private static final String CSV_DATA = "/filesystem/sample-fs.csv";
   private static final String JSON_DATA = "/filesystem/sample-fs.json";
   private static final String TEXT_DATA = "/filesystem/sample-fs.txt";
+  private static final String XML_DATA = "/filesystem/sample-fs.xml";
+  private static final String AVRO_SCHEMA = "/filesystem/sample-fs.avsc";
 
   private Config config;
 
@@ -404,5 +410,113 @@ public class TestFileSystemInput {
     assertTrue(results.collectAsList().contains(RowFactory.create(1, "hello", true)));
     assertTrue(results.collectAsList().contains(RowFactory.create(2, "world", false)));
   }
+  
+  @Test
+  public void readXmlNoOptions() throws Exception {
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put(FileSystemInput.FORMAT_CONFIG, "xml");
+    paramMap.put(FileSystemInput.XML_ROW_TAG, "item");
+    paramMap.put(FileSystemInput.PATH_CONFIG, FileSystemInput.class.getResource(XML_DATA).getPath());
+    config = ConfigFactory.parseMap(paramMap);
 
+    FileSystemInput xmlInput = new FileSystemInput();
+    xmlInput.configure(config);
+
+    Dataset<Row> dataFrame = xmlInput.read();
+
+    StructType schema = dataFrame.schema();
+    assertEquals("Schema", "StructField(double1,DoubleType,true)StructField(int1,LongType,true)StructField(long1,LongType,true)StructField(long2,LongType,true)StructField(string1,StringType,true)StructField(string2,StringType,true)StructField(subitems,StructType(StructField(subitem,ArrayType(StructType(StructField(double1,DoubleType,true), StructField(int1,LongType,true), StructField(long1,LongType,true), StructField(string1,StringType,true)),true),true)),true)StructField(timestamp1,StringType,true)",
+    		schema.mkString());
+    assertTrue("Field long1 index", schema.getFieldIndex("long1").isDefined());
+    assertTrue("Field long2 index", schema.getFieldIndex("long2").isDefined());
+    assertTrue("Field string1 index", schema.getFieldIndex("string1").isDefined());
+    assertTrue("Field string2 index", schema.getFieldIndex("string2").isDefined());
+    assertTrue("Field timestamp1 index", schema.getFieldIndex("timestamp1").isDefined());
+    assertTrue("Field int1 index", schema.getFieldIndex("int1").isDefined());
+    assertTrue("Field double1 index", schema.getFieldIndex("double1").isDefined());
+    assertTrue("Field subitems index", schema.getFieldIndex("subitems").isDefined());
+    
+    assertEquals(2, dataFrame.count());
+    
+    Row first = dataFrame.first();
+    assertEquals(9.99, first.getDouble(schema.fieldIndex("double1")), 0.01);
+    assertEquals(2L, first.getLong(schema.fieldIndex("int1")));
+    assertEquals(10001L, first.getLong(schema.fieldIndex("long1")));
+    assertEquals(20001L, first.getLong(schema.fieldIndex("long2")));
+    assertEquals("555-123456", first.getString(schema.fieldIndex("string1")));
+    assertEquals("OPEN", first.getString(schema.fieldIndex("string2")));
+    assertEquals("2018-02-02 02:02:02.000+0000", first.getString(schema.fieldIndex("timestamp1")));
+    
+    Row subitems = first.getStruct(schema.fieldIndex("subitems"));
+    assertNotNull("Subitems row", subitems);
+    assertEquals(1, subitems.length());
+    List<Row> subitemsElems = subitems.getList(0);
+    assertNotNull("Subitems elements row", subitemsElems);
+    assertEquals(3, subitemsElems.size());
+  }
+  
+  @Test
+  public void readXmlWithFieldsName() throws Exception {
+    Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put(FileSystemInput.FORMAT_CONFIG, "xml");
+    paramMap.put(FileSystemInput.XML_ROW_TAG, "item");
+    paramMap.put(FileSystemInput.PATH_CONFIG, FileSystemInput.class.getResource(XML_DATA).getPath());
+    paramMap.put(FileSystemInput.FIELD_NAMES_CONFIG, Lists.newArrayList("long1", "long2", "string1", "timestamp1", "int1", "double1"));
+    paramMap.put(FileSystemInput.FIELD_TYPES_CONFIG, Lists.newArrayList("long", "long", "string", "timestamp", "int", "double"));
+    config = ConfigFactory.parseMap(paramMap);
+
+    FileSystemInput xmlInput = new FileSystemInput();
+    xmlInput.configure(config);
+
+    Dataset<Row> dataFrame = xmlInput.read();
+    StructType schema = dataFrame.schema();
+
+    assertEquals(2, dataFrame.count());
+    
+    assertEquals(DataTypes.LongType, schema.fields()[schema.fieldIndex("long1")].dataType());
+    assertEquals(DataTypes.StringType, schema.fields()[schema.fieldIndex("string1")].dataType());
+    assertEquals(DataTypes.TimestampType, schema.fields()[schema.fieldIndex("timestamp1")].dataType());
+    assertEquals(DataTypes.IntegerType, schema.fields()[schema.fieldIndex("int1")].dataType());
+    assertEquals(DataTypes.DoubleType, schema.fields()[schema.fieldIndex("double1")].dataType());
+  }
+  
+  @Test
+  public void readXmlWithAvroSchema() throws Exception {
+  	Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put(FileSystemInput.FORMAT_CONFIG, "xml");
+    paramMap.put(FileSystemInput.XML_ROW_TAG, "item");
+    paramMap.put(FileSystemInput.PATH_CONFIG, FileSystemInput.class.getResource(XML_DATA).getPath());
+    paramMap.put(FileSystemInput.AVRO_FILE_CONFIG, FileSystemInput.class.getResource(AVRO_SCHEMA).getPath());
+    
+    config = ConfigFactory.parseMap(paramMap);
+
+    FileSystemInput xmlInput = new FileSystemInput();
+    xmlInput.configure(config);
+
+    Dataset<Row> dataFrame = xmlInput.read();
+    
+    
+   // assertEquals("", dataFrame.schema().mkString());
+    
+    Dataset<Row> items = dataFrame.select("long1", "long2", "string1", "string2", "timestamp1", "int1", "double1", "subitems");
+    
+    assertEquals(2, items.count());
+    
+    StructType schema = items.schema();
+    assertEquals(DataTypes.LongType, schema.fields()[schema.fieldIndex("long1")].dataType());
+    assertEquals(DataTypes.StringType, schema.fields()[schema.fieldIndex("string1")].dataType());
+    assertEquals(DataTypes.StringType, schema.fields()[schema.fieldIndex("timestamp1")].dataType());
+    assertEquals(DataTypes.IntegerType, schema.fields()[schema.fieldIndex("int1")].dataType());
+    assertEquals(DataTypes.DoubleType, schema.fields()[schema.fieldIndex("double1")].dataType());
+    
+    dataFrame.createOrReplaceTempView("items");
+    Dataset<Row> subitems = dataFrame.sparkSession().sql("SELECT a.id, a.subitem.int1, a.subitem.long1 from (SELECT long1 as id, explode(subitems.subitem) as subitem from items) a");
+    assertEquals(5, subitems.count());
+    
+    schema = subitems.schema();
+    Row first = subitems.first();
+    assertEquals(DataTypes.LongType, schema.fields()[schema.fieldIndex("id")].dataType());
+    assertEquals(DataTypes.IntegerType, schema.fields()[schema.fieldIndex("int1")].dataType());
+    assertEquals(DataTypes.LongType, schema.fields()[schema.fieldIndex("long1")].dataType());
+  }
 }

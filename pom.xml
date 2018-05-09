@@ -131,6 +131,11 @@
       <version>${h2.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+    	<groupId>com.databricks</groupId>
+    	<artifactId>spark-xml_${scala.version}</artifactId>
+    	<version>0.4.1</version>
+    </dependency>
   </dependencies>
   
   <build>
@@ -182,7 +187,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>build-helper-maven-plugin</artifactId>
-        <version>1.12</version>
+        <version>3.0.0</version>
         <executions>
           <execution>
             <id>timestamp-property</id>

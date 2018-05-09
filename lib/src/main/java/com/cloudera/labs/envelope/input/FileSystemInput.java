@@ -82,12 +82,16 @@ public class FileSystemInput implements BatchInput, ProvidesAlias {
   public static final String INPUT_FORMAT_TYPE_CONFIG = "format-class";
   public static final String INPUT_FORMAT_KEY_CONFIG = "key-class";
   public static final String INPUT_FORMAT_VALUE_CONFIG = "value-class";
+  
+  // Row mandatory parameters
+  public static final String XML_ROW_TAG = "row-tag";
 
   public static final String CSV_FORMAT = "csv";
   public static final String PARQUET_FORMAT = "parquet";
   public static final String JSON_FORMAT = "json";
   public static final String INPUT_FORMAT_FORMAT = "input-format";
   public static final String TEXT_FORMAT = "text";
+  public static final String XML_FORMAT = "xml";
 
   private Config config;
   private ConfigUtils.OptionMap options;
@@ -105,7 +109,8 @@ public class FileSystemInput implements BatchInput, ProvidesAlias {
       throw new RuntimeException("Filesystem input requires '" + PATH_CONFIG + "' config");
     }
 
-    if (config.getString(FORMAT_CONFIG).equals(CSV_FORMAT) || config.getString(FORMAT_CONFIG).equals(JSON_FORMAT)) {
+    if (config.getString(FORMAT_CONFIG).equals(CSV_FORMAT) || config.getString(FORMAT_CONFIG).equals(JSON_FORMAT)
+    		|| config.getString(FORMAT_CONFIG).equals(XML_FORMAT)) {
       if ((config.hasPath(FIELD_NAMES_CONFIG) || config.hasPath(FIELD_TYPES_CONFIG)) &&
           (config.hasPath(AVRO_LITERAL_CONFIG) || config.hasPath(AVRO_FILE_CONFIG))) {
         throw new RuntimeException(String.format("Filesystem input has too many schema parameters set. Set either '%s' " +
@@ -194,6 +199,11 @@ public class FileSystemInput implements BatchInput, ProvidesAlias {
         throw new RuntimeException("Filesystem 'input-format' requires 'translator' config");
       }
     }
+    
+    if (config.getString(FORMAT_CONFIG).equals(XML_FORMAT)) {
+      options = new ConfigUtils.OptionMap(config)
+        .resolve("rowTag", XML_ROW_TAG);
+    }
   }
 
   @Override
@@ -219,6 +229,9 @@ public class FileSystemInput implements BatchInput, ProvidesAlias {
       case TEXT_FORMAT:
         fs = readText(path);
         break;
+      case XML_FORMAT:
+          fs = readXML(path);
+          break;
       default:
         throw new RuntimeException("Filesystem input format not supported: " + format);
     }
@@ -288,6 +301,16 @@ public class FileSystemInput implements BatchInput, ProvidesAlias {
       return lines;
     }
   }
+  
+  private Dataset<Row> readXML(String path) {
+	    LOG.debug("Reading XML: {}", path);
+
+	    if (null != schema) {
+	      return Contexts.getSparkSession().read().format("com.databricks.spark.xml").options(options).schema(schema).load(path);
+	    } else {
+	      return Contexts.getSparkSession().read().format("com.databricks.spark.xml").options(options).load(path);
+	    }
+	  }
 
   @Override
   public String getAlias() {
