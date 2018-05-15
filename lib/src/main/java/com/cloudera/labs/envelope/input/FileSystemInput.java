@@ -19,9 +19,11 @@ package com.cloudera.labs.envelope.input;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.avro.Schema;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -83,9 +85,20 @@ public class FileSystemInput implements BatchInput, ProvidesAlias {
   public static final String INPUT_FORMAT_KEY_CONFIG = "key-class";
   public static final String INPUT_FORMAT_VALUE_CONFIG = "value-class";
   
-  // Row mandatory parameters
-  public static final String XML_ROW_TAG = "row-tag";
-
+  //XML optional parameters
+  public static final String XML_ROW_TAG_CONFIG = "row-tag";
+  public static final String XML_SAMPLING_RATIO_CONFIG = "sampling-ratio";
+  public static final String XML_EXCLUDE_ATTRIBUTE_CONFIG = "exclude-attribute";
+  public static final String XML_MODE_CONFIG = "mode";
+  public static final String XML_COLUMN_NAME_OF_CORRUPTED_RECORD_CONFIG = "column-name-of-corrupted-record";
+  public static final String XML_ATTRIBUTE_PREFIX_CONFIG = "attribute-prefix";
+  public static final String XML_VALUE_TAG_CONFIG = "value-tag";
+  public static final String XML_CHARSET_CONFIG = "charset";
+  public static final String XML_IGNORE_SURROUNDING_SPACES_CONFIG = "ignore-surrounding-spaces";
+  public static final String XML_NULL_VALUE_CONFIG = "null-value";
+  
+  private static final List<String> XML_MODES = Arrays.asList("PERMISSIVE", "DROPMALFORMED", "FAILFAST");
+  
   public static final String CSV_FORMAT = "csv";
   public static final String PARQUET_FORMAT = "parquet";
   public static final String JSON_FORMAT = "json";
@@ -201,8 +214,25 @@ public class FileSystemInput implements BatchInput, ProvidesAlias {
     }
     
     if (config.getString(FORMAT_CONFIG).equals(XML_FORMAT)) {
+    	if (!config.hasPath(XML_ROW_TAG_CONFIG)) {
+        throw new RuntimeException("Filesystem 'xml' requires '" + XML_ROW_TAG_CONFIG + "' config");
+      }
+    	
+    	if (config.hasPath(XML_MODE_CONFIG) && !XML_MODES.contains(config.getString(XML_MODE_CONFIG))) {
+    		throw new RuntimeException("Filesystem 'xml' parameter '" + XML_MODE_CONFIG + "' must be one of " + StringUtils.join(XML_MODES, ","));
+    	}
+    	
       options = new ConfigUtils.OptionMap(config)
-        .resolve("rowTag", XML_ROW_TAG);
+        .resolve("rowTag", XML_ROW_TAG_CONFIG)
+        .resolve("samplingRatio", XML_SAMPLING_RATIO_CONFIG)
+        .resolve("excludeAttribute", XML_EXCLUDE_ATTRIBUTE_CONFIG)
+        .resolve("nullValue", XML_NULL_VALUE_CONFIG)
+        .resolve("mode", XML_MODE_CONFIG)
+        .resolve("columnNameOfCorruptRecord", XML_COLUMN_NAME_OF_CORRUPTED_RECORD_CONFIG)
+        .resolve("attributePrefix", XML_ATTRIBUTE_PREFIX_CONFIG)
+        .resolve("valueTag", XML_VALUE_TAG_CONFIG)
+        .resolve("charset", XML_CHARSET_CONFIG)
+        .resolve("ignoreSurroundingSpaces", XML_IGNORE_SURROUNDING_SPACES_CONFIG);
     }
   }
 

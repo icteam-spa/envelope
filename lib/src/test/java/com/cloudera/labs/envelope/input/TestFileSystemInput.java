@@ -30,7 +30,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.spark.SparkException;
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -415,7 +414,7 @@ public class TestFileSystemInput {
   public void readXmlNoOptions() throws Exception {
     Map<String, Object> paramMap = new HashMap<>();
     paramMap.put(FileSystemInput.FORMAT_CONFIG, "xml");
-    paramMap.put(FileSystemInput.XML_ROW_TAG, "item");
+    paramMap.put(FileSystemInput.XML_ROW_TAG_CONFIG, "item");
     paramMap.put(FileSystemInput.PATH_CONFIG, FileSystemInput.class.getResource(XML_DATA).getPath());
     config = ConfigFactory.parseMap(paramMap);
 
@@ -459,7 +458,7 @@ public class TestFileSystemInput {
   public void readXmlWithFieldsName() throws Exception {
     Map<String, Object> paramMap = new HashMap<>();
     paramMap.put(FileSystemInput.FORMAT_CONFIG, "xml");
-    paramMap.put(FileSystemInput.XML_ROW_TAG, "item");
+    paramMap.put(FileSystemInput.XML_ROW_TAG_CONFIG, "item");
     paramMap.put(FileSystemInput.PATH_CONFIG, FileSystemInput.class.getResource(XML_DATA).getPath());
     paramMap.put(FileSystemInput.FIELD_NAMES_CONFIG, Lists.newArrayList("long1", "long2", "string1", "timestamp1", "int1", "double1"));
     paramMap.put(FileSystemInput.FIELD_TYPES_CONFIG, Lists.newArrayList("long", "long", "string", "timestamp", "int", "double"));
@@ -484,7 +483,7 @@ public class TestFileSystemInput {
   public void readXmlWithAvroSchema() throws Exception {
   	Map<String, Object> paramMap = new HashMap<>();
     paramMap.put(FileSystemInput.FORMAT_CONFIG, "xml");
-    paramMap.put(FileSystemInput.XML_ROW_TAG, "item");
+    paramMap.put(FileSystemInput.XML_ROW_TAG_CONFIG, "item");
     paramMap.put(FileSystemInput.PATH_CONFIG, FileSystemInput.class.getResource(XML_DATA).getPath());
     paramMap.put(FileSystemInput.AVRO_FILE_CONFIG, FileSystemInput.class.getResource(AVRO_SCHEMA).getPath());
     
@@ -514,9 +513,21 @@ public class TestFileSystemInput {
     assertEquals(5, subitems.count());
     
     schema = subitems.schema();
-    Row first = subitems.first();
     assertEquals(DataTypes.LongType, schema.fields()[schema.fieldIndex("id")].dataType());
     assertEquals(DataTypes.IntegerType, schema.fields()[schema.fieldIndex("int1")].dataType());
     assertEquals(DataTypes.LongType, schema.fields()[schema.fieldIndex("long1")].dataType());
+  }
+  
+  @Test (expected = RuntimeException.class)
+  public void readXmlMismatchMode() throws Exception {
+  	Map<String, Object> paramMap = new HashMap<>();
+    paramMap.put(FileSystemInput.FORMAT_CONFIG, "xml");
+    paramMap.put(FileSystemInput.XML_MODE_CONFIG, "foo");
+    paramMap.put(FileSystemInput.PATH_CONFIG, FileSystemInput.class.getResource(XML_DATA).getPath());
+    
+    config = ConfigFactory.parseMap(paramMap);
+
+    FileSystemInput xmlInput = new FileSystemInput();
+    xmlInput.configure(config);
   }
 }

@@ -226,25 +226,25 @@ Input configurations belong to data steps, and have the `steps.[stepname].input.
 |The Hadoop filesystem path to read as the input. Typically a Cloudera EDH will point to HDFS by default. Use `s3a://` for Amazon S3.
 
 |format
-|The file format of the files of the input directory. Envelope supports formats `parquet`, `json`, `csv`, `input-format`, `text`.
+|The file format of the files of the input directory. Envelope supports formats `parquet`, `json`, `csv`, `input-format`, `text`, `xml`.
 
 |field.names
-|(csv, json) List of StructType field names of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For JSON, the field names must match the JSON data field names.
+|(csv, json, xml) List of StructType field names of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For JSON, the field names must match the JSON data field names.
 
 |field.types
-|(csv, json) List of StructType field data types of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For details, see the available options defined in <<Data Type Support>>.
+|(csv, json, xml) List of StructType field data types of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For details, see the available options defined in <<Data Type Support>>.
 
 |avro-schema.literal
-|(csv, json) Inline Avro schema definition of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For details, see the available options defined in <<Data Type Support>>.
+|(csv, json, xml) Inline Avro schema definition of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For details, see the available options defined in <<Data Type Support>>.
 
 |avro-schema.file
-|(csv, json) A local (executor working directory) Avro schema file of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For details, see the available options defined in <<Data Type Support>>.
+|(csv, json, xml) A local (executor working directory) Avro schema file of the projected Row schema. In Spark, this will execute `DataFrameReader#schema`. For details, see the available options defined in <<Data Type Support>>.
 
 |separator
 |(csv) Spark option `sep`; sets the single character as a separator for each field and value. (default ,)
 
 |encoding
-|(csv) Spark option `encoding`; decodes the CSV files by the given encoding type. (default `UTF-8`)
+|(csv, xml) Spark option `encoding`; decodes the CSV files by the given encoding type. (default `UTF-8`)
 
 |quote
 |(csv) Spark option `quote`; sets the single character used for escaping quoted values where the separator can be part of the value. _If you would like to turn off quotations, you need to set not `null` but an empty string._ (default ")
@@ -268,7 +268,7 @@ Input configurations belong to data steps, and have the `steps.[stepname].input.
 |(csv) Spark option `ignoreTrailingWhiteSpace`; defines whether or not trailing whitespaces from values being read should be skipped. (default `false`)
 
 |null-value
-|(csv) Spark option `nullValue`; sets the string representation of a null value. This applies to all supported types including the string type. (default empty string)
+|(csv, xml) Spark option `nullValue`; sets the string representation of a null value. This applies to all supported types including the string type. (default empty string)
 
 |nan-value
 |(csv) Spark option `nanValue`; sets the string representation of a "non-number" value. (default `NaN`)
@@ -295,7 +295,7 @@ Input configurations belong to data steps, and have the `steps.[stepname].input.
 |(csv) Spark option `maxMalformedLogPerPartition`; sets the maximum number of malformed rows Spark will log for each partition. Malformed records beyond this number will be ignored. (default `10`)
 
 |mode
-|(csv) Spark option `mode`; allows a mode for dealing with corrupt records during parsing.
+|(csv, xml) Spark option `mode`; allows a mode for dealing with corrupt records during parsing.
 
 `PERMISSIVE`: sets other fields to `null` when it meets a corrupted record. When a schema is set by user, it sets `null` for extra fields.
 
@@ -316,6 +316,36 @@ Input configurations belong to data steps, and have the `steps.[stepname].input.
 
 |translator
 |(input-format, text) The Translator class to use to convert the InputFormat's Key/Value pairs into Dataset Rows. See <<Translators>> for details. This is optional for `text`, and if it is omitted then the input will read the whole lines into a single string field named `value`.
+
+|row-tag
+|(xml) Spark option `rowTag`; the row tag of your xml files to treat as a row.
+(default `ROW`)
+ 
+|sampling-ratio
+|(xml) Spark option `samplingRatio`; the sampling ratio for inferring schema (0.0 ~ 1).
+Possible types are StructType, ArrayType, StringType, LongType, DoubleType, BooleanType, TimestampType and NullType, unless user provides a schema for this.
+(default `1`)
+ 
+|exclude-attribute
+|(xml) Spark option `excludeAttribute`; whether you want to exclude attributes in elements or not.
+(default `false`)
+
+|column-name-of-corrupt-record
+|(xml) Spark option `columnNameOfCorruptRecord`; the name of new field where malformed strings are stored.
+(default `_corrupt_record`)
+
+|attribute-prefix
+|(xml) Spark option `attributePrefix`; the prefix for attributes so that we can differentiate attributes and elements.
+This will be the prefix for field names.
+(default `_`)
+
+|value-tag
+|(xml) Spark option `valueTag`; the tag used for the value when there are attributes in the element having no child.
+(default `_VALUE`)
+
+|ignore-surrounding-spaces
+|(xml) Spark option `ignoreSurroundingSpaces`; defines whether or not surrounding whitespaces from values being read should be skipped.
+(default `false`)
 
 ||
 |`_hive_`|
