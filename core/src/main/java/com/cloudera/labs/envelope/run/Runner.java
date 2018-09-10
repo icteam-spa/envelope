@@ -18,10 +18,7 @@
 package com.cloudera.labs.envelope.run;
 
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.VoidFunction;
@@ -346,7 +343,15 @@ public class Runner {
 
   private static void awaitAllOffMainThreadsFinished(Set<Future<Void>> offMainThreadSteps) throws Exception {
     for (Future<Void> offMainThreadStep : offMainThreadSteps) {
-      offMainThreadStep.get();
+      try {
+        offMainThreadStep.get();
+      } catch (ExecutionException e) {
+        LOG.info("ExecutionException received from Future");
+        if (!Contexts.getSparkSession().sparkContext().isStopped()) {
+          Contexts.getSparkSession().sparkContext().stop();
+        }
+      }
+
     }
   }
 
