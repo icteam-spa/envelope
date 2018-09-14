@@ -32,7 +32,7 @@ public class EnvelopeMain {
   // Other Java/Scala programs could instead launch an Envelope pipeline by passing their
   // own Config object to Runner#run.
   public static void main(String[] args) throws Exception {
-    LOG.info("Envelope (ICTEAM v03) application started");
+    LOG.info("Envelope (ICTEAM v05) application started");
 
     Config config = ConfigUtils.configFromPath(args[0]);
     if (args.length == 2) {

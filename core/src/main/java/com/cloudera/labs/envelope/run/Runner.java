@@ -69,6 +69,7 @@ public class Runner {
    * @param config The full configuration of the Envelope pipeline
    */
   public static void run(Config config) throws Exception {
+    boolean errorHappened = false;
     Set<Step> steps = extractSteps(config);
     LOG.info("Steps instantiated");
 
@@ -89,12 +90,16 @@ public class Runner {
     else {
       LOG.debug("No streaming steps identified");
 
-      runBatch(steps);
+      errorHappened = runBatch(steps);
     }
     
     shutdownThreadPool();
 
-    LOG.debug("Runner finished");
+    if (errorHappened) {
+      throw new Exception("Runner finished with error");
+    } else {
+      LOG.debug("Runner finished");
+    }
   }
   
   private static Set<Step> extractSteps(Config config) throws Exception {
@@ -215,9 +220,10 @@ public class Runner {
    * Run the steps in dependency order.
    * @param steps The steps to run, which may be the full Envelope pipeline, or a subset of it.
    */
-  private static void runBatch(Set<Step> steps) throws Exception {
+  private static boolean runBatch(Set<Step> steps) throws Exception {
     LOG.debug("Started batch for steps: {}", StepUtils.stepNamesAsString(steps));
-    
+    boolean errorHappened = false;
+
     Set<Future<Void>> offMainThreadSteps = Sets.newHashSet();
     Set<Step> refactoredSteps = null;
 
@@ -310,7 +316,7 @@ public class Runner {
         LOG.debug("Finished looking into step: " + step.getName());
       }
 
-      awaitAllOffMainThreadsFinished(offMainThreadSteps);
+      errorHappened = awaitAllOffMainThreadsFinished(offMainThreadSteps);
       offMainThreadSteps.clear();
       
       if (refactoredSteps != null) {
@@ -320,6 +326,7 @@ public class Runner {
     }
 
     LOG.debug("Finished batch for steps: {}", StepUtils.stepNamesAsString(steps));
+    return errorHappened;
   }
 
   private static void initializeThreadPool(Config config) {
@@ -341,15 +348,23 @@ public class Runner {
     });
   }
 
-  private static void awaitAllOffMainThreadsFinished(Set<Future<Void>> offMainThreadSteps) throws Exception {
+  private static boolean awaitAllOffMainThreadsFinished(Set<Future<Void>> offMainThreadSteps) throws Exception {
+    boolean errorHappened = false;
     for (Future<Void> offMainThreadStep : offMainThreadSteps) {
       try {
         offMainThreadStep.get();
       } catch (ExecutionException e) {
-          // per evitare che resti appeso
-          throw new RuntimeException(e);
+        LOG.warn("ExecutionException received from Future", e);
+        errorHappened = true;
+        if (!Contexts.getSparkSession().sparkContext().isStopped()) {
+          LOG.info("Stopping sparkContext");
+          Contexts.getSparkSession().sparkContext().stop();
+        } else {
+          LOG.info("sparkContext already stopped");
+        }
       }
     }
+    return errorHappened;
   }
 
   private static void shutdownThreadPool() {
