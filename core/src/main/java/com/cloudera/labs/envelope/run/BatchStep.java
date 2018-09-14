@@ -31,6 +31,8 @@ import com.cloudera.labs.envelope.utils.RowUtils;
 import com.cloudera.labs.envelope.utils.StepUtils;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A batch step is a data step that contains a single DataFrame.
@@ -44,6 +46,8 @@ public class BatchStep extends DataStep {
   private static final String INPUT_PREFIX = "input.";
   private static final String DERIVER_PREFIX = "deriver.";
   private static final String REPETITION_PREFIX = "repetitions";
+
+  private static Logger LOG = LoggerFactory.getLogger(BatchStep.class);
   
   public BatchStep(String name, Config config) {
     super(name, config);
@@ -67,6 +71,9 @@ public class BatchStep extends DataStep {
   }
 
   public void submit(Set<Step> dependencySteps) throws Exception {
+    LOG.debug("Setting submitted TRUE");
+    setSubmitted(true);
+
     Contexts.getSparkSession().sparkContext().setJobDescription("Step: " + getName());
 
     Dataset<Row> data;
@@ -86,8 +93,6 @@ public class BatchStep extends DataStep {
     }
 
     setData(data);
-
-    setSubmitted(true);
   }
   
   private boolean doesRepartition() {

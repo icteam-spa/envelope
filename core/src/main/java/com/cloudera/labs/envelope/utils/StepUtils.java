@@ -40,6 +40,7 @@ public class StepUtils {
   public static boolean allStepsSubmitted(Set<Step> steps) {
     for (Step step : steps) {
       if (!step.hasSubmitted()) {
+        LOG.debug("Step " + step.getName() + " has not been submitted");
         return false;
       }
     }
