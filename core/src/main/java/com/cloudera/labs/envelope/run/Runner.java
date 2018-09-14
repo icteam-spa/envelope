@@ -346,15 +346,9 @@ public class Runner {
       try {
         offMainThreadStep.get();
       } catch (ExecutionException e) {
-        LOG.info("ExecutionException received from Future");
-        if (!Contexts.getSparkSession().sparkContext().isStopped()) {
-          LOG.info("Stopping sparkContext");
-          Contexts.getSparkSession().sparkContext().stop();
-        } else {
-          LOG.info("sparkContext already stopped");
-        }
+          // per evitare che resti appeso
+          throw new RuntimeException(e);
       }
-
     }
   }
 

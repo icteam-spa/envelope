@@ -71,9 +71,6 @@ public class BatchStep extends DataStep {
   }
 
   public void submit(Set<Step> dependencySteps) throws Exception {
-    LOG.debug("Setting submitted TRUE");
-    setSubmitted(true);
-
     Contexts.getSparkSession().sparkContext().setJobDescription("Step: " + getName());
 
     Dataset<Row> data;
@@ -93,6 +90,7 @@ public class BatchStep extends DataStep {
     }
 
     setData(data);
+    setSubmitted(true);
   }
   
   private boolean doesRepartition() {
