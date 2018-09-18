@@ -342,7 +342,12 @@ public class Runner {
     return threadPool.submit(new Callable<Void>() {
       @Override
       public Void call() throws Exception {
-        step.submit(dependencies);
+        try {
+          step.submit(dependencies);
+        } catch (Exception e) {
+          step.setCrashed(true);
+          throw e;
+        }
         return null;
       }
     });

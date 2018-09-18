@@ -39,7 +39,7 @@ public class StepUtils {
   
   public static boolean allStepsSubmitted(Set<Step> steps) {
     for (Step step : steps) {
-      if (!step.hasSubmitted()) {
+      if (!step.hasSubmitted() && !step.isCrashed()) {
         LOG.debug("Step " + step.getName() + " has not been submitted");
         return false;
       }

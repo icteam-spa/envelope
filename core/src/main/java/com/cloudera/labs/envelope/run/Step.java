@@ -31,6 +31,7 @@ public abstract class Step {
   protected Config config;
   
   private boolean submitted = false;
+  private boolean crashed = false;
   private Set<String> dependencyNames;
   
   public Step(String name, Config config) {
@@ -67,6 +68,14 @@ public abstract class Step {
 
   public void setSubmitted(boolean submitted) {
     this.submitted = submitted;
+  }
+
+  public boolean isCrashed() {
+    return crashed;
+  }
+
+  public void setCrashed(boolean crashed) {
+    this.crashed = crashed;
   }
 
   public Set<String> getDependencyNames() {
